@@ -10,8 +10,12 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
   var itemList = [String]()
+    var defaults = UserDefaults.standard
     override func viewDidLoad() {
         super.viewDidLoad()
+        if let items = defaults.array(forKey:"Todolist") as? [String]{
+            itemList=items
+        }
         
         // Do any additional setup after loading the view, typically from a nib.
     }
@@ -47,6 +51,7 @@ class ToDoListViewController: UITableViewController {
         let alertAction = UIAlertAction(title: "Add", style: .default) { (action) in
          
             self.itemList.append(textField.text!)
+            self.defaults.set(self.itemList, forKey: "Todolist")
             self.tableView.reloadData()
             
             
@@ -62,6 +67,7 @@ class ToDoListViewController: UITableViewController {
         
         
         present(alert,animated: true,completion: nil)
+        
     }
     
 }
