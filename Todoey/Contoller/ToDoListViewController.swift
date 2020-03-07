@@ -10,24 +10,15 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
     var itemList = [Item]()
-    var defaults = UserDefaults.standard
+    // create plist to save data in this path
+     let filePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+   
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let n1=Item()
-        n1.title="melk"
-        n1.done=false
-        itemList.append(n1)
-        let n2=Item()
-        n2.title="tea"
-        n2.done=false
-        
-        itemList.append(n2)
-        let n3=Item()
-        n3.title="besc"
-        n3.done=false
-        itemList.append(n3)
+       
+          loadItemsFromPlist()
         
        
         //if let items = defaults.array(forKey:"Todolist") as? [String]{
@@ -51,8 +42,10 @@ class ToDoListViewController: UITableViewController {
         return cell
     }
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-      
+        // her we reflect changes on done property on array
         let item = itemList[indexPath.row]
+        // so to reflects these changes to cerated items.plist
+           saveItem()
      
         item.done = !item.done
         //tableView.reloadData()
@@ -73,12 +66,12 @@ class ToDoListViewController: UITableViewController {
             let newItem = Item()
             newItem.title=textField.text!
             self.itemList.append(newItem)
-            self.defaults.set(self.itemList, forKey: "Todolist")
+            
+          self.saveItem()
+            
+            
+            //tableView.reloadData()
             self.tableView.reloadData()
-            
-            
-           
-            
         }
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Enter Item Name"
@@ -89,7 +82,39 @@ class ToDoListViewController: UITableViewController {
         
         
         present(alert,animated: true,completion: nil)
+       
         
+    }
+    // MARK - Model Manipulation Methods
+    func saveItem()  {
+        // first encode data : note ensure that data inhirit from Coadble [encodable,decodable]
+        let encoder = PropertyListEncoder()
+        do{
+            let data = try encoder.encode(itemList)
+            // then write data that have encoded to specified path
+            try data.write(to:filePath!)
+        }
+        catch{
+            print("error:\(error)")
+        }
+        
+        
+        //tableView.reloadData()
+        
+        
+    }
+    func loadItemsFromPlist() {
+        if let data =  try? Data(contentsOf: filePath!){
+            let decoder = PropertyListDecoder()
+            // fill array after decoding data
+            do{
+                itemList = try decoder.decode([Item].self, from: data)
+            }
+            catch{
+                print("Error\(error)")
+            }
+            
+        }
     }
     
 }
