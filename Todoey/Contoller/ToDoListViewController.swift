@@ -9,13 +9,30 @@
 import UIKit
 
 class ToDoListViewController: UITableViewController {
-  var itemList = [String]()
+    var itemList = [Item]()
     var defaults = UserDefaults.standard
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let items = defaults.array(forKey:"Todolist") as? [String]{
-            itemList=items
-        }
+        
+        let n1=Item()
+        n1.title="melk"
+        n1.done=false
+        itemList.append(n1)
+        let n2=Item()
+        n2.title="tea"
+        n2.done=false
+        
+        itemList.append(n2)
+        let n3=Item()
+        n3.title="besc"
+        n3.done=false
+        itemList.append(n3)
+        
+       
+        //if let items = defaults.array(forKey:"Todolist") as? [String]{
+          //  itemList=items
+        //}
         
         // Do any additional setup after loading the view, typically from a nib.
     }
@@ -25,22 +42,26 @@ class ToDoListViewController: UITableViewController {
         
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
+    
         let cell = tableView.dequeueReusableCell(withIdentifier: "itemCell", for: indexPath)
-        cell.textLabel?.text=itemList[indexPath.row]
-        
+        cell.textLabel?.text=itemList[indexPath.row].title
+         let  item = itemList[indexPath.row]
+        cell.accessoryType = item.done ? .checkmark : .none
+      
         return cell
     }
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-       // to make color of cell flash back of white after selected instead of gray
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }
-        else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+      
+        let item = itemList[indexPath.row]
+     
+        item.done = !item.done
+        //tableView.reloadData()
+        tableView.beginUpdates()
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+        tableView.endUpdates()
+
+      // to make color of cell flash back of white after selected instead of gray
+       tableView.deselectRow(at: indexPath, animated: true)
     }
     // MARK - Add new Item
 
@@ -49,8 +70,9 @@ class ToDoListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add New Item", message: "", preferredStyle: .alert)
         
         let alertAction = UIAlertAction(title: "Add", style: .default) { (action) in
-         
-            self.itemList.append(textField.text!)
+            let newItem = Item()
+            newItem.title=textField.text!
+            self.itemList.append(newItem)
             self.defaults.set(self.itemList, forKey: "Todolist")
             self.tableView.reloadData()
             
