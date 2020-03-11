@@ -8,10 +8,13 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class ToDoListViewController: UITableViewController{
+class ToDoListViewController: SwipTableViewController{
     var itemList:Results<Item>?
     var realm = try! Realm()
+    
+    @IBOutlet weak var searchBar: UISearchBar!
     var selectedCategory:Category?{
         didSet{
             loadData()
@@ -20,8 +23,29 @@ class ToDoListViewController: UITableViewController{
     
     override func viewDidLoad() {
         super.viewDidLoad()
+       
         
       
+    }
+    override func viewWillAppear(_ animated: Bool) {
+           title=selectedCategory?.name
+            guard let colorhex=selectedCategory?.colour else{ fatalError()}
+        
+           updateNavBar(withHexcode: colorhex)
+        
+        
+    }
+    override func viewWillDisappear(_ animated: Bool) {
+        updateNavBar(withHexcode: "1D9Bf6")
+    }
+    // MARK: - Nav Bar setup color
+    func updateNavBar(withHexcode colorHexcode:String) {
+        guard let navBar = navigationController?.navigationBar else{fatalError()}
+        guard let navBarColor=UIColor(hexString: colorHexcode) else{fatalError()}
+        navBar.barTintColor = navBarColor
+        searchBar.barTintColor = navBarColor
+        navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+        navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor:ContrastColorOf(navBarColor, returnFlat: true)]
     }
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
@@ -31,9 +55,14 @@ class ToDoListViewController: UITableViewController{
     }
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     
-        let cell = tableView.dequeueReusableCell(withIdentifier: "itemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         if let item = itemList?[indexPath.row]{
         cell.textLabel?.text=itemList?[indexPath.row].title
+            if let colour=UIColor(hexString: selectedCategory!.colour)?.darken(byPercentage:CGFloat(indexPath.row)/CGFloat( itemList!.count)){
+                cell.backgroundColor = colour
+                //chanage color of cell text so we can read it
+                cell.textLabel?.textColor = ContrastColorOf(colour, returnFlat: true)
+            }
         cell.accessoryType = item.done ? .checkmark : .none
             
         }
@@ -61,6 +90,20 @@ class ToDoListViewController: UITableViewController{
           tableView.reloadRows(at: [indexPath], with: .automatic)
         tableView.endUpdates()
 
+    }
+    // MARK - Delete Item
+    override func updateModel(at indexPath: IndexPath) {
+        if let itemForDeletion = itemList?[indexPath.row]{
+            do{
+                try realm.write{
+                    realm.delete(itemForDeletion)
+                    print("item deleted")
+                }
+            }
+            catch{
+                
+            }
+        }
     }
     // MARK - Add new Item
 
@@ -117,13 +160,7 @@ extension ToDoListViewController:UISearchBarDelegate{
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         itemList = itemList?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "title", ascending: false)
         tableView.reloadData()
-//        let request:NSFetchRequest<Item>=Item.fetchRequest()
-//        //the query in predicate
-//         request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-//        // to sort result using NSdortdiscriptor
-//        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-//        loadData(with: request)
-//        //tableView.reloadData()
+
     }
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0 {

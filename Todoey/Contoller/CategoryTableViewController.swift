@@ -7,24 +7,35 @@
 //
 
 import UIKit
-
+import SwipeCellKit
 import RealmSwift
-class CategoryTableViewController: UITableViewController {
+import ChameleonFramework
+
+class CategoryTableViewController:SwipTableViewController {
     var categories:Results<Category>?
     let realm = try! Realm()
    
     override func viewDidLoad() {
         super.viewDidLoad()
         loadCategories()
+       
+    
 
     }
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // if empty return 1
         return categories?.count ?? 1
     }
+
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-         let cell = tableView.dequeueReusableCell(withIdentifier: "catCell", for: indexPath)
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories added"
+         let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        
+        if let cat = categories?[indexPath.row]{
+            cell.textLabel?.text = cat.name
+            guard let catColor = UIColor(hexString: cat.colour) else {fatalError()}
+            cell.backgroundColor = catColor
+            cell.textLabel?.textColor = ContrastColorOf(catColor, returnFlat: true)
+        }
         return cell
     }
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -49,6 +60,7 @@ class CategoryTableViewController: UITableViewController {
         let alertAction = UIAlertAction(title: "Add", style: .default) { (action) in
             let cat = Category()
             cat.name=textField.text!
+            cat.colour = UIColor.randomFlat.hexValue()
             self.saveCategory(cat: cat)
         
           
@@ -76,8 +88,23 @@ class CategoryTableViewController: UITableViewController {
        categories = realm.objects(Category.self)
         tableView.reloadData()
     }
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryForDeletion = self.categories?[indexPath.row]{
+            do{
+                try self.realm.write{
+                    self.realm.delete(categoryForDeletion)
+                    print("cat deleted")
+                }
+            }
+            catch{
+                print("error while deleting category:\(error)")
+            }
+        }
+    }
+    
+    
     
 
 }
 
-
+// MARK: - swip cell delagte methods
